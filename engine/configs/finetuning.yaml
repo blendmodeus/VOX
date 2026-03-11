@@ -1,0 +1,56 @@
+# VØX Voice Fine-Tuning Configuration
+# Pattern from: axiom_organism/configs/thresholds.yaml
+
+# Device selection: auto (recommended), cuda, mps, cpu
+device: "auto"
+
+# Training hyperparameters
+training:
+  epochs: 50
+  batch_size: 4
+  learning_rate: 1.0e-4
+  warmup_steps: 100
+  gradient_accumulation: 4
+  max_grad_norm: 1.0
+
+# LoRA adapter settings
+lora:
+  rank: 8
+  alpha: 16.0
+  dropout: 0.05
+
+# Checkpointing
+checkpointing:
+  checkpoint_every: 10
+  max_checkpoints: 3
+
+# Audio processing constraints
+audio:
+  target_sample_rate: 24000
+  min_total_duration: 60    # Minimum 1 minute of audio
+  max_total_duration: 600   # Maximum 10 minutes of audio
+  min_clip_duration: 1.0    # Minimum segment length
+  max_clip_duration: 30.0   # Maximum segment length
+
+# Data augmentation
+augmentation:
+  enabled: true
+  pitch_shift_range: [-2, 2]      # Semitones
+  time_stretch_range: [0.9, 1.1]  # Ratio
+  noise_level: 0.005              # Additive noise amplitude
+
+# Verification settings
+verification:
+  enabled: true
+  min_similarity_score: 0.5   # Minimum voice similarity (0-1)
+  min_quality_score: 0.4      # Minimum audio quality (0-1)
+  require_governance_pass: true
+
+# Fast mode overrides (for quick iteration)
+fast_mode:
+  epochs: 20
+  batch_size: 2
+  warmup_steps: 50
+  lora_rank: 4
+  lora_alpha: 8.0
+  checkpoint_every: 5

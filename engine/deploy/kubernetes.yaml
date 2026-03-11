@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: axiom-vox
+  labels:
+    app: axiom-vox
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: axiom-vox
+  template:
+    metadata:
+      labels:
+        app: axiom-vox
+    spec:
+      containers:
+      - name: axiom-vox
+        image: axiom-vox:1.0.0
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axiom-vox
+spec:
+  selector:
+    app: axiom-vox
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VØX — Settings</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a14;
+            color: #e0e0e0;
+            font-family: 'Inter', -apple-system, sans-serif;
+            padding: 40px 32px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 900;
+            color: #00f0ff;
+            letter-spacing: 1px;
+            margin-bottom: 32px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .settings-group {
+            margin-bottom: 28px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+        }
+
+        .settings-group h2 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(0, 240, 255, 0.7);
+            margin-bottom: 16px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .setting-desc {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 3px;
+        }
+
+        select,
+        input[type="text"] {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            outline: none;
+            min-width: 180px;
+            transition: border-color 0.2s;
+        }
+
+        select:focus,
+        input[type="text"]:focus {
+            border-color: rgba(0, 240, 255, 0.4);
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+
+        .hotkey-display {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            color: #00f0ff;
+            font-family: 'Inter', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+        }
+
+        .version {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>VØX Settings</h1>
+
+    <div class="settings-group">
+        <h2>Transcription</h2>
+        <div class="setting-row">
+            <div>
+                <div class="setting-label">Whisper Model</div>
+                <div class="setting-desc">Larger models = better accuracy, slower startup</div>
+            </div>
+            <select id="whisperModel">
+                <option value="tiny">tiny (~75MB)</option>
+                <option value="base">base (~140MB)</option>
+                <option value="small">small (~460MB)</option>
+                <option value="medium">medium (~1.5GB)</option>
+                <option value="distil-large-v3" selected>distil-large-v3 (~1.5GB)</option>
+                <option value="large-v3">large-v3 (~3GB)</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <div>
+                <div class="setting-label">Language</div>
+                <div class="setting-desc">Auto-detect or force a specific language</div>
+            </div>
+            <select id="language">
+                <option value="">Auto-detect</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="ja">Japanese</option>
+                <option value="zh">Chinese</option>
+                <option value="ko">Korean</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="settings-group">
+        <h2>Hotkey</h2>
+        <div class="setting-row">
+            <div>
+                <div class="setting-label">Push-to-Talk Shortcut</div>
+                <div class="setting-desc">Tap to toggle, hold to record</div>
+            </div>
+            <div class="hotkey-display">⌘⇧Space</div>
+        </div>
+    </div>
+
+    <div class="settings-group">
+        <h2>Output</h2>
+        <div class="setting-row">
+            <div>
+                <div class="setting-label">Mode</div>
+                <div class="setting-desc">Where transcribed text goes</div>
+            </div>
+            <select id="outputMode">
+                <option value="inject" selected>Inject at cursor (⌘V)</option>
+                <option value="clipboard">Copy to clipboard only</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="version">VØX v1.0.0 — AXIØM Voice Interface</div>
+</body>
+
+</html>

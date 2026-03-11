@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: VØX Lambda Deployment
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.11
+
+Resources:
+  VoxFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: axiom-vox
+      CodeUri: .
+      Handler: axiom_vox.lambda_handler.handler
+      Description: AXIØM VØX Text-to-Speech API
+      Environment:
+        Variables:
+          VOX_ENV: production
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+  VoxFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${VoxFunction}"
+      RetentionInDays: 14
+
+Outputs:
+  VoxApi:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

@@ -1,0 +1,65 @@
+# VOICEPRINT Profile Tracer Agent Requirements
+
+# Core dependencies
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# NLP and text analysis
+nltk>=3.8.0
+textblob>=0.17.1
+vaderSentiment>=3.3.2
+spacy>=3.6.0
+
+# Topic modeling
+gensim>=4.3.0
+bertopic>=0.15.0
+
+# Embeddings and transformers
+sentence-transformers>=2.2.0
+transformers>=4.30.0
+
+# Time series and change point detection
+ruptures>=1.1.8
+statsmodels>=0.14.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Data ingestion
+tweepy>=4.14.0  # Twitter/X API
+google-api-python-client>=2.100.0  # YouTube API
+feedparser>=6.0.10  # RSS feeds
+httpx>=0.25.0  # Async HTTP client
+requests>=2.31.0
+beautifulsoup4>=4.12.0  # HTML parsing
+lxml>=4.9.0  # HTML/XML parser
+
+# Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
+pyyaml>=6.0
+
+# AXIØM integration
+# (Add AXIØM kernel dependencies if needed)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

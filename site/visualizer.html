@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VØX — Voice Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: transparent;
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        /* ═══════ COMPACT CAPSULE ═══════ */
+        .capsule {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px 10px 20px;
+            border-radius: 40px;
+            background: rgba(6, 6, 14, 0.94);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 240, 255, 0.12);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.06);
+            cursor: default;
+            user-select: none;
+            width: fit-content;
+            margin: 10px auto;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .capsule:active {
+            cursor: grabbing;
+        }
+
+        .capsule.recording {
+            border-color: rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+        }
+
+        .capsule.processing {
+            border-color: rgba(255, 200, 0, 0.35);
+        }
+
+        .capsule.success {
+            border-color: rgba(0, 240, 120, 0.4);
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 900;
+            color: #00f0ff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+            flex-shrink: 0;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 7px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 3px 8px;
+            flex-shrink: 0;
+        }
+
+        /* Grip handle — drag zone on the right */
+        .capsule-grip {
+            display: grid;
+            grid-template-columns: repeat(3, 3px);
+            grid-template-rows: repeat(3, 3px);
+            gap: 2px;
+            padding: 3px;
+            cursor: grab;
+            -webkit-app-region: drag;
+            flex-shrink: 0;
+            opacity: 0.2;
+            transition: opacity 0.2s;
+        }
+
+        .capsule-grip:hover {
+            opacity: 0.5;
+        }
+
+        .capsule-grip:active {
+            cursor: grabbing;
+        }
+
+        .grip-dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .status-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #333;
+            transition: background 0.3s;
+        }
+
+        .capsule.recording .status-dot {
+            background: #00f0ff;
+            animation: pulse-dot 1s infinite;
+        }
+
+        .capsule.processing .status-dot {
+            background: #ffc800;
+            animation: pulse-dot 0.5s infinite;
+        }
+
+        .capsule.success .status-dot {
+            background: #00f078;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.35
+            }
+        }
+
+        /* ═══════ TRAFFIC LIGHTS ═══════ */
+        .traffic-lights {
+            position: absolute;
+            top: 50%;
+            left: 8px;
+            transform: translateY(-60%);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 200;
+        }
+
+        .capsule:hover .traffic-lights {
+            opacity: 1;
+        }
+
+        .kitt-dashboard:hover .kitt-header .traffic-lights {
+            opacity: 1;
+        }
+
+        .tl-dot {
+            width: 3.5px;
+            height: 3.5px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.15s;
+        }
+
+        .tl-dot:hover {
+            transform: scale(1.8);
+        }
+
+        .tl-expand {
+            background: #28c840;
+        }
+
+        .tl-minimize {
+            background: #ffbd2e;
+        }
+
+        .tl-close {
+            background: #ff5f57;
+        }
+
+        /* red — lower curve */
+        /* ═══════ VOICE MODULATOR (shared) ═══════ */
+        .voice-modulator {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .voice-modulator.compact {
+            height: 40px;
+        }
+
+        .voice-modulator.expanded {
+            height: 200px;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .eq-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+        }
+
+        .eq-column.compact {
+            width: 22px;
+        }
+
+        .eq-column.expanded {
+            width: 30px;
+            gap: 2px;
+        }
+
+        .eq-line {
+            width: 100%;
+            border-radius: 0;
+            background: rgba(0, 240, 255, 0.06);
+        }
+
+        .eq-line.compact {
+            height: 3px;
+        }
+
+        .eq-line.expanded {
+            height: 4px;
+        }
+
+        .transcript-flash {
+            position: absolute;
+            bottom: -26px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.65);
+            background: rgba(6, 6, 14, 0.88);
+            padding: 3px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+            max-width: 280px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .transcript-flash.visible {
+            opacity: 1;
+        }
+
+        /* ═══════ KITT DASHBOARD ═══════ */
+        .kitt-dashboard {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(180deg, #1c1c1c 0%, #141414 100%);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .kitt-dashboard.active {
+            display: flex;
+        }
+
+        .kitt-dashboard.active~.capsule {
+            display: none;
+        }
+
+        .kitt-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px 6px;
+            position: relative;
+            -webkit-app-region: drag;
+        }
+
+        .kitt-title {
+            font-size: 36px;
+            font-weight: 900;
+            color: #00f0ff;
+            letter-spacing: 8px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.5), 0 0 40px rgba(0, 240, 255, 0.15);
+        }
+
+        .kitt-header .traffic-lights {
+            position: absolute;
+            top: 14px;
+            left: 16px;
+            right: auto;
+            opacity: 0;
+        }
+
+        .kitt-dashboard:hover .kitt-header .traffic-lights {
+            opacity: 1;
+        }
+
+        .kitt-subtitle {
+            text-align: center;
+            font-size: 8px;
+            font-weight: 700;
+            color: rgba(0, 240, 255, 0.3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding-bottom: 4px;
+        }
+
+        .kitt-main {
+            display: flex;
+            flex: 1;
+            padding: 6px 14px;
+            gap: 14px;
+            -webkit-app-region: no-drag;
+        }
+
+        /* Side panels — spread out */
+        .kitt-side {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+            width: 72px;
+        }
+
+        .kitt-btn {
+            padding: 7px 4px;
+            border: 2px solid;
+            border-radius: 5px;
+            font-family: 'Inter', sans-serif;
+            font-size: 9px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.15s;
+            -webkit-app-region: no-drag;
+            position: relative;
+        }
+
+        .kitt-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .kitt-btn.yellow {
+            background: rgba(255, 220, 0, 0.1);
+            border-color: #ffdc00;
+            color: #ffdc00;
+        }
+
+        .kitt-btn.yellow:hover {
+            background: rgba(255, 220, 0, 0.2);
+        }
+
+        .kitt-btn.yellow.active {
+            background: rgba(255, 220, 0, 0.4);
+            box-shadow: 0 0 10px rgba(255, 220, 0, 0.25);
+        }
+
+        .kitt-btn.red {
+            background: rgba(255, 59, 59, 0.1);
+            border-color: #ff3b3b;
+            color: #ff3b3b;
+        }
+
+        .kitt-btn.red:hover {
+            background: rgba(255, 59, 59, 0.2);
+        }
+
+        .kitt-btn.red.active {
+            background: rgba(255, 59, 59, 0.4);
+            box-shadow: 0 0 10px rgba(255, 59, 59, 0.25);
+        }
+
+        .kitt-btn.teal {
+            background: rgba(0, 240, 255, 0.08);
+            border-color: #00f0ff;
+            color: #00f0ff;
+        }
+
+        .kitt-btn.teal:hover {
+            background: rgba(0, 240, 255, 0.2);
+        }
+
+        .kitt-btn.teal.active {
+            background: rgba(0, 240, 255, 0.35);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+        }
+
+        .kitt-btn .btn-detail {
+            display: block;
+            font-size: 6px;
+            font-weight: 600;
+            opacity: 0.5;
+            margin-top: 1px;
+            letter-spacing: 0;
+        }
+
+        .kitt-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mode bar */
+        .kitt-modes {
+            display: flex;
+            gap: 8px;
+            padding: 6px 16px 10px;
+            justify-content: center;
+            -webkit-app-region: no-drag;
+        }
+
+        .kitt-mode-btn {
+            padding: 7px 12px;
+            border: 2px solid;
+            border-radius: 5px;
+            font-family: 'Inter', sans-serif;
+            font-size: 9px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.15s;
+        }
+
+        .kitt-mode-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .kitt-mode-btn.teal {
+            background: rgba(0, 240, 255, 0.08);
+            border-color: rgba(0, 240, 255, 0.3);
+            color: rgba(0, 240, 255, 0.5);
+        }
+
+        .kitt-mode-btn.teal.active {
+            background: rgba(0, 240, 255, 0.3);
+            border-color: #00f0ff;
+            color: #00f0ff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        .kitt-mode-btn.yellow {
+            background: rgba(255, 220, 0, 0.05);
+            border-color: rgba(255, 220, 0, 0.3);
+            color: rgba(255, 220, 0, 0.5);
+        }
+
+        .kitt-mode-btn.yellow.active {
+            background: rgba(255, 220, 0, 0.3);
+            border-color: #ffdc00;
+            color: #ffdc00;
+        }
+
+        .kitt-mode-btn.red {
+            background: rgba(255, 59, 59, 0.05);
+            border-color: rgba(255, 59, 59, 0.3);
+            color: rgba(255, 59, 59, 0.5);
+        }
+
+        .kitt-mode-btn.red.active {
+            background: rgba(255, 59, 59, 0.3);
+            border-color: #ff3b3b;
+            color: #ff3b3b;
+        }
+
+        .kitt-status {
+            text-align: center;
+            font-size: 8px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 10px;
+        }
+
+        /* ═══════ POPUP OVERLAY ═══════ */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-overlay.active {
+            display: flex;
+        }
+
+        .popup-panel {
+            background: #1e1e28;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 10px;
+            padding: 16px 20px;
+            min-width: 220px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+        }
+
+        .popup-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #00f0ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .popup-option {
+            padding: 8px 10px;
+            margin: 4px 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .popup-option:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.2);
+        }
+
+        .popup-option.selected {
+            background: rgba(0, 240, 255, 0.2);
+            border-color: #00f0ff;
+            color: #00f0ff;
+        }
+
+        .popup-option .opt-sub {
+            display: block;
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 2px;
+        }
+
+        .popup-close {
+            margin-top: 12px;
+            width: 100%;
+            padding: 6px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 5px;
+            color: #00f0ff;
+            font-family: 'Inter';
+            font-size: 9px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .popup-close:hover {
+            background: rgba(0, 240, 255, 0.2);
+        }
+
+        .gov-badge {
+            margin-top: 8px;
+            padding: 4px 8px;
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            border-radius: 4px;
+            font-size: 7px;
+            font-weight: 700;
+            color: rgba(0, 240, 255, 0.4);
+            text-align: center;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ═══ EXPANDED KITT DASHBOARD ═══ -->
+    <div class="kitt-dashboard" id="kittDashboard">
+        <div class="kitt-header">
+            <div class="traffic-lights">
+                <button class="tl-dot tl-close" id="tlCloseExp"></button>
+                <button class="tl-dot tl-minimize" id="tlMinExp"></button>
+                <button class="tl-dot tl-expand" id="tlMaxExp"></button>
+            </div>
+            <div class="kitt-title">V Ø X</div>
+        </div>
+        <div class="kitt-subtitle">AXIØM Governed Voice Interface</div>
+
+        <div class="kitt-main">
+            <div class="kitt-side">
+                <button class="kitt-btn yellow" id="btnModel">MODEL<span class="btn-detail">base</span></button>
+                <button class="kitt-btn yellow" id="btnLang">LANG<span class="btn-detail">auto</span></button>
+                <button class="kitt-btn yellow" id="btnOutput">OUT<span class="btn-detail">inject</span></button>
+                <button class="kitt-btn red" id="btnMic">MIC<span class="btn-detail">default</span></button>
+                <button class="kitt-btn red" id="btnHotkey">KEY<span class="btn-detail">⌘⇧Spc</span></button>
+            </div>
+
+            <div class="kitt-center">
+                <div class="voice-modulator expanded" id="voiceModulatorExp"></div>
+                <div class="kitt-status" id="kittStatus">Ready — ⌘⇧Space</div>
+            </div>
+
+            <div class="kitt-side">
+                <button class="kitt-btn yellow" id="btnAI">A.I.<span class="btn-detail">select</span></button>
+                <button class="kitt-btn yellow" id="btnSpeed">SPD<span class="btn-detail">1.0x</span></button>
+                <button class="kitt-btn yellow" id="btnVoice">VOICE<span class="btn-detail">prime</span></button>
+                <button class="kitt-btn red" id="btnTTS">TTS<span class="btn-detail">off</span></button>
+                <button class="kitt-btn red active" id="btnVox">VØX<span class="btn-detail">active</span></button>
+            </div>
+        </div>
+
+        <div class="kitt-modes">
+            <button class="kitt-mode-btn teal active" id="modeTranscribe">TRANSCRIBE</button>
+            <button class="kitt-mode-btn yellow" id="modeAI">A.I. VOICE</button>
+            <button class="kitt-mode-btn red" id="modePursuit">PURSUIT</button>
+        </div>
+    </div>
+
+    <!-- ═══ POPUP PANELS ═══ -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup-panel" id="popupPanel">
+            <div class="popup-title" id="popupTitle"></div>
+            <div id="popupContent"></div>
+            <button class="popup-close" id="popupClose">Done</button>
+        </div>
+    </div>
+
+    <div class="capsule" id="capsule">
+        <div class="traffic-lights">
+            <button class="tl-dot tl-expand" id="tlMax"></button>
+            <button class="tl-dot tl-minimize" id="tlMin"></button>
+            <button class="tl-dot tl-close" id="tlClose"></button>
+        </div>
+        <div class="logo">VØX</div>
+        <div class="voice-modulator compact" id="voiceModulator"></div>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span class="status-text" id="statusText">Ready</span>
+        </div>
+        <div class="capsule-grip">
+            <span class="grip-dot"></span><span class="grip-dot"></span><span class="grip-dot"></span>
+            <span class="grip-dot"></span><span class="grip-dot"></span><span class="grip-dot"></span>
+            <span class="grip-dot"></span><span class="grip-dot"></span><span class="grip-dot"></span>
+        </div>
+        <div class="transcript-flash" id="transcriptFlash"></div>
+    </div>
+
+    <script>
+        const TEAL = [0, 240, 255];
+        const NUM_COLS = 3;
+        const LINES_COMPACT = 13;
+        const LINES_EXPANDED = 26;
+        const API_URL = 'http://127.0.0.1:8000';
+        let isExpanded = false;
+
+        // ═══ SETTINGS STATE ═══
+        const settings = {
+            model: 'base',
+            language: 'auto',
+            output: 'inject',
+            tts: false,
+            aiModel: 'none',
+            speed: '1.0',
+            voice: 'prime',
+            mode: 'transcribe'
+        };
+
+        // ═══ BUILD MODULATORS ═══
+        function buildModulator(container, linesPerCol, cls) {
+            const cols = [];
+            for (let c = 0; c < NUM_COLS; c++) {
+                const d = document.createElement('div');
+                d.className = `eq-column ${cls}`;
+                const lines = [];
+                for (let r = 0; r < linesPerCol; r++) {
+                    const l = document.createElement('div');
+                    l.className = `eq-line ${cls}`;
+                    d.appendChild(l);
+                    lines.push(l);
+                }
+                container.appendChild(d);
+                cols.push(lines);
+            }
+            return cols;
+        }
+
+        const compactCols = buildModulator(document.getElementById('voiceModulator'), LINES_COMPACT, 'compact');
+        const expandedCols = buildModulator(document.getElementById('voiceModulatorExp'), LINES_EXPANDED, 'expanded');
+
+        // ═══ STATE ═══
+        let currentAmplitude = 0, targetAmplitude = 0;
+        let isRecording = false, mediaRecorder = null, audioChunks = [];
+        let analyser = null, frequencyData = null, audioStream = null, audioCtx = null;
+        const colValues = [new Array(NUM_COLS).fill(0), new Array(NUM_COLS).fill(0)];
+
+        const capsule = document.getElementById('capsule');
+        const statusText = document.getElementById('statusText');
+        const kittStatus = document.getElementById('kittStatus');
+        const transcriptFlash = document.getElementById('transcriptFlash');
+
+        // ═══ MODULATOR ANIMATION ═══
+        // ═══ MODULATOR ANIMATION — Half-life decay ═══
+        // Peak tracking per column for proportional decay
+        const colPeaks = [new Array(NUM_COLS).fill(0), new Array(NUM_COLS).fill(0)];
+
+        function updateColumns(columns, linesPerCol, amplitude, cv, peaks) {
+            const center = Math.floor(linesPerCol / 2);
+            let fullAvg = 0;
+            if ((isRecording || isTTSPlaying) && analyser && frequencyData) {
+                analyser.getByteFrequencyData(frequencyData);
+                let s = 0;
+                for (let i = 0; i < frequencyData.length; i++) s += frequencyData[i];
+                fullAvg = s / frequencyData.length / 255;
+            }
+            for (let c = 0; c < NUM_COLS; c++) {
+                const w = c === 1 ? 1.0 : 0.6;
+                const target = amplitude > 0.03 ? fullAvg * 1.8 * w : 0;
+
+                if (target > cv[c]) {
+                    // SNAP OUT — instant attack
+                    cv[c] += (target - cv[c]) * 0.9;
+                    peaks[c] = cv[c]; // track peak
+                } else {
+                    // HALF-LIFE DECAY
+                    const halfPeak = peaks[c] * 0.5;
+                    if (cv[c] > halfPeak) {
+                        // Phase 1: Fast return to 50% of peak
+                        cv[c] += (halfPeak - cv[c]) * 0.15;
+                    } else {
+                        // Phase 2: Slow exponential decay to zero
+                        cv[c] *= 0.97;
+                        if (cv[c] < 0.01) cv[c] = 0;
+                    }
+                }
+
+                const val = Math.min(1, cv[c]);
+                const spread = val * center;
+                for (let r = 0; r < linesPerCol; r++) {
+                    const line = columns[c][r];
+                    const dist = Math.abs(r - center);
+                    if (amplitude <= 0.03 && val < 0.02) {
+                        if (dist === 0) {
+                            const b = 0.06 + Math.sin(Date.now() / 1200 + c * 0.8) * 0.02;
+                            line.style.background = `rgba(${TEAL},${b.toFixed(3)})`;
+                            line.style.boxShadow = 'none';
+                        } else {
+                            line.style.background = `rgba(${TEAL},0.015)`;
+                            line.style.boxShadow = 'none';
+                        }
+                        continue;
+                    }
+                    let br, glow = 0;
+                    if (dist <= spread) {
+                        const ef = 1 - (dist / Math.max(1, spread)) * 0.3;
+                        br = (0.3 + val * 0.7) * ef + Math.sin(Date.now() / 100 + r * 2.5 + c * 4) * 0.1 * val;
+                        glow = br * 0.5;
+                    } else if (dist <= spread + 1) {
+                        br = (1 - (dist - spread)) * val * 0.3;
+                    } else { br = 0.015; }
+                    br = Math.max(0.015, Math.min(1, br));
+                    line.style.background = `rgba(${TEAL},${br.toFixed(3)})`;
+                    line.style.boxShadow = glow > 0.1 ? `0 0 ${(3 + glow * 10).toFixed(0)}px rgba(${TEAL},${(glow * 0.4).toFixed(3)})` : 'none';
+                }
+            }
+        }
+
+        // ═══ TTS PLAYBACK ═══
+        let isTTSPlaying = false;
+        let ttsAudioCtx = null;
+
+        async function playTTS(text) {
+            setStatus('processing', 'Speaking...');
+            isTTSPlaying = true;
+
+            try {
+                const fd = new FormData();
+                fd.append('text', text);
+
+                const res = await fetch(`${API_URL}/synthesize`, { method: 'POST', body: fd });
+                if (!res.ok) throw new Error('Synthesis failed');
+
+                const arrayBuf = await res.arrayBuffer();
+                ttsAudioCtx = new AudioContext();
+                const audioBuffer = await ttsAudioCtx.decodeAudioData(arrayBuf);
+
+                // Connect to analyser so modulator reacts to TTS voice
+                const source = ttsAudioCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                analyser = ttsAudioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.75;
+                frequencyData = new Uint8Array(analyser.frequencyBinCount);
+                source.connect(analyser);
+                analyser.connect(ttsAudioCtx.destination);
+
+                source.onended = () => {
+                    isTTSPlaying = false;
+                    analyser = null;
+                    targetAmplitude = 0;
+                    if (ttsAudioCtx) { ttsAudioCtx.close(); ttsAudioCtx = null; }
+                    setStatus('success', 'Done ✓');
+                    setTimeout(() => setStatus('', 'Ready'), 1500);
+                };
+
+                source.start();
+            } catch (e) {
+                console.error('[VØX] TTS error:', e);
+                isTTSPlaying = false;
+                setStatus('', 'TTS Error');
+                setTimeout(() => setStatus('', 'Ready'), 2000);
+            }
+        }
+
+        function animate() {
+            if ((isRecording || isTTSPlaying) && analyser) {
+                analyser.getByteFrequencyData(frequencyData);
+                let s = 0; for (let i = 0; i < frequencyData.length; i++) s += frequencyData[i];
+                targetAmplitude = Math.min(1, Math.pow(s / frequencyData.length / 255, 0.4) * 4);
+            } else if (!isRecording && !isTTSPlaying) { targetAmplitude = 0; }
+            currentAmplitude += (targetAmplitude - currentAmplitude) * 0.2;
+            if (isExpanded) updateColumns(expandedCols, LINES_EXPANDED, currentAmplitude, colValues[1], colPeaks[1]);
+            else updateColumns(compactCols, LINES_COMPACT, currentAmplitude, colValues[0], colPeaks[0]);
+            requestAnimationFrame(animate);
+        }
+
+        // ═══ RECORDING ═══
+        async function startRecording() {
+            if (isRecording) return;
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(audioStream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    await sendToTranscription(new Blob(audioChunks, { type: 'audio/wav' }));
+                };
+                mediaRecorder.start();
+                isRecording = true;
+                audioCtx = new AudioContext();
+                const src = audioCtx.createMediaStreamSource(audioStream);
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.75;
+                src.connect(analyser);
+                frequencyData = new Uint8Array(analyser.frequencyBinCount);
+                setStatus('recording', 'Listening...');
+            } catch (e) { setStatus('', 'Mic Error'); }
+        }
+        function stopRecording() {
+            if (!isRecording || !mediaRecorder) return;
+            mediaRecorder.stop(); isRecording = false; targetAmplitude = 0;
+            if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+            if (audioCtx) { audioCtx.close(); audioCtx = null; }
+            analyser = null;
+            setStatus('processing', 'Thinking...');
+        }
+        function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
+        function setStatus(state, text) {
+            capsule.className = 'capsule' + (state ? ' ' + state : '');
+            statusText.textContent = text;
+            kittStatus.textContent = text + ' — ⌘⇧Space';
+        }
+
+        // ═══ TRANSCRIPTION ═══
+        async function sendToTranscription(blob) {
+            const fd = new FormData(); fd.append('audio', blob, 'recording.wav');
+            try {
+                const r = await fetch(`${API_URL}/transcribe`, { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status === 'success' && res.text) {
+                    showTranscriptFlash(res.text);
+
+                    if (settings.mode === 'ai-voice' && settings.aiModel !== 'none') {
+                        // AI VOICE MODE: transcribe → AI model → TTS response
+                        setStatus('processing', 'AXIØM...');
+                        try {
+                            const aiFd = new FormData();
+                            aiFd.append('text', res.text);
+                            aiFd.append('model', settings.aiModel);
+                            const aiRes = await fetch(`${API_URL}/ai-respond`, { method: 'POST', body: aiFd });
+                            const aiData = await aiRes.json();
+                            if (aiData.status === 'success' && aiData.text) {
+                                showTranscriptFlash('⊘ ' + aiData.text);
+                                // Speak the AI response through Chatterbox
+                                await playTTS(aiData.text);
+                            } else {
+                                setStatus('', 'AI Error');
+                                setTimeout(() => setStatus('', 'Ready'), 2000);
+                            }
+                        } catch (e) {
+                            console.error('[VØX] AI pipeline error:', e);
+                            setStatus('', 'AI Error');
+                            setTimeout(() => setStatus('', 'Ready'), 2000);
+                        }
+                    } else {
+                        // TRANSCRIBE MODE: inject text at cursor
+                        if (settings.output === 'inject' && window.vox && window.vox.injectText) {
+                            window.vox.injectText(res.text);
+                        }
+
+                        if (settings.tts) {
+                            await playTTS(res.text);
+                        } else {
+                            setStatus('success', 'Done ✓');
+                            setTimeout(() => setStatus('', 'Ready'), 1500);
+                        }
+                    }
+                } else { setStatus('', 'No speech'); setTimeout(() => setStatus('', 'Ready'), 2000); }
+            } catch (e) { setStatus('', 'API Error'); setTimeout(() => setStatus('', 'Ready'), 2000); }
+        }
+        function showTranscriptFlash(t) {
+            transcriptFlash.textContent = t.length > 55 ? t.substring(0, 52) + '...' : t;
+            transcriptFlash.classList.add('visible');
+            setTimeout(() => transcriptFlash.classList.remove('visible'), 2500);
+        }
+
+        // ═══ EXPAND / COLLAPSE ═══
+        function expandDashboard() {
+            isExpanded = true;
+            document.getElementById('kittDashboard').classList.add('active');
+            if (window.vox && window.vox.resize) window.vox.resize(360, 460);
+        }
+        function collapseDashboard() {
+            isExpanded = false;
+            document.getElementById('kittDashboard').classList.remove('active');
+            if (window.vox && window.vox.resize) window.vox.resize(300, 130);
+        }
+
+        // ═══ POPUP SYSTEM ═══
+        const popupOverlay = document.getElementById('popupOverlay');
+        const popupTitle = document.getElementById('popupTitle');
+        const popupContent = document.getElementById('popupContent');
+
+        function showPopup(title, options, currentValue, onSelect, governance) {
+            popupTitle.textContent = title;
+            popupContent.innerHTML = '';
+            options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'popup-option' + (opt.value === currentValue ? ' selected' : '');
+                div.innerHTML = opt.label + (opt.sub ? `<span class="opt-sub">${opt.sub}</span>` : '');
+                div.onclick = () => { onSelect(opt.value); closePopup(); };
+                popupContent.appendChild(div);
+            });
+            if (governance) {
+                const badge = document.createElement('div');
+                badge.className = 'gov-badge';
+                badge.textContent = '⊘ AXIØM GOVERNED';
+                popupContent.appendChild(badge);
+            }
+            popupOverlay.classList.add('active');
+        }
+        function closePopup() { popupOverlay.classList.remove('active'); }
+        document.getElementById('popupClose').onclick = closePopup;
+        popupOverlay.onclick = (e) => { if (e.target === popupOverlay) closePopup(); };
+
+        // ═══ BUTTON HANDLERS ═══
+        document.getElementById('btnModel').onclick = () => showPopup('Whisper Model', [
+            { value: 'tiny', label: 'TINY', sub: '~75MB — fastest' },
+            { value: 'base', label: 'BASE', sub: '~140MB — balanced' },
+            { value: 'small', label: 'SMALL', sub: '~460MB — accurate' },
+            { value: 'medium', label: 'MEDIUM', sub: '~1.5GB — high accuracy' },
+            { value: 'large-v3', label: 'LARGE-V3', sub: '~3GB — best quality' },
+        ], settings.model, (v) => {
+            settings.model = v;
+            document.querySelector('#btnModel .btn-detail').textContent = v;
+        }, true);
+
+        document.getElementById('btnLang').onclick = () => showPopup('Language', [
+            { value: 'auto', label: 'AUTO DETECT' },
+            { value: 'en', label: 'ENGLISH' },
+            { value: 'es', label: 'ESPAÑOL' },
+            { value: 'fr', label: 'FRANÇAIS' },
+            { value: 'de', label: 'DEUTSCH' },
+            { value: 'ja', label: '日本語' },
+            { value: 'zh', label: '中文' },
+            { value: 'ko', label: '한국어' },
+        ], settings.language, (v) => {
+            settings.language = v;
+            document.querySelector('#btnLang .btn-detail').textContent = v;
+        }, false);
+
+        document.getElementById('btnOutput').onclick = () => showPopup('Output Mode', [
+            { value: 'inject', label: 'INJECT AT CURSOR', sub: 'Paste via ⌘V' },
+            { value: 'clipboard', label: 'CLIPBOARD ONLY', sub: 'Copy without pasting' },
+        ], settings.output, (v) => {
+            settings.output = v;
+            document.querySelector('#btnOutput .btn-detail').textContent = v;
+        }, false);
+
+        document.getElementById('btnAI').onclick = () => showPopup('A.I. Model', [
+            { value: 'none', label: 'NONE', sub: 'Transcription only' },
+            { value: 'gpt-4o', label: 'GPT-4o', sub: 'OpenAI — fast reasoning' },
+            { value: 'claude-3.5', label: 'CLAUDE 3.5', sub: 'Anthropic — nuanced' },
+            { value: 'gemini-2', label: 'GEMINI 2.0', sub: 'Google — multimodal' },
+            { value: 'local-llama', label: 'LOCAL LLAMA', sub: 'Ollama — private' },
+        ], settings.aiModel, (v) => {
+            settings.aiModel = v;
+            document.querySelector('#btnAI .btn-detail').textContent = v === 'none' ? 'select' : v;
+        }, true);
+
+        document.getElementById('btnSpeed').onclick = () => showPopup('Playback Speed', [
+            { value: '0.5', label: '0.5×' },
+            { value: '0.75', label: '0.75×' },
+            { value: '1.0', label: '1.0× NORMAL' },
+            { value: '1.25', label: '1.25×' },
+            { value: '1.5', label: '1.5×' },
+            { value: '2.0', label: '2.0× FAST' },
+        ], settings.speed, (v) => {
+            settings.speed = v;
+            document.querySelector('#btnSpeed .btn-detail').textContent = v + 'x';
+        }, false);
+
+        document.getElementById('btnVoice').onclick = () => showPopup('Voice Profile', [
+            { value: 'prime', label: 'PRIME', sub: 'AXIØM cloned voice' },
+            { value: 'default', label: 'DEFAULT', sub: 'System voice' },
+        ], settings.voice, (v) => {
+            settings.voice = v;
+            document.querySelector('#btnVoice .btn-detail').textContent = v;
+        }, true);
+
+        // Toggle buttons
+        document.getElementById('btnTTS').onclick = () => {
+            settings.tts = !settings.tts;
+            const btn = document.getElementById('btnTTS');
+            btn.classList.toggle('active', settings.tts);
+            btn.querySelector('.btn-detail').textContent = settings.tts ? 'on' : 'off';
+        };
+
+        document.getElementById('btnMic').onclick = () => {
+            // Toggle mic on/off
+            toggleRecording();
+        };
+
+        document.getElementById('btnHotkey').onclick = () => showPopup('Hotkey', [
+            { value: 'cmd-shift-space', label: '⌘⇧SPACE', sub: 'Default' },
+            { value: 'cmd-shift-period', label: '⌘⇧.', sub: 'Alternative' },
+            { value: 'fn-fn', label: 'Fn Fn', sub: 'Double-tap function' },
+        ], 'cmd-shift-space', (v) => {
+            document.querySelector('#btnHotkey .btn-detail').textContent =
+                v === 'cmd-shift-space' ? '⌘⇧Spc' : v === 'cmd-shift-period' ? '⌘⇧.' : 'Fn²';
+        }, false);
+
+        // Mode buttons
+        const modeButtons = {
+            'modeTranscribe': 'transcribe',
+            'modeAI': 'ai-voice',
+            'modePursuit': 'pursuit'
+        };
+        Object.entries(modeButtons).forEach(([id, mode]) => {
+            document.getElementById(id).onclick = () => {
+                settings.mode = mode;
+                document.querySelectorAll('.kitt-mode-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+            };
+        });
+
+        // ═══ TRAFFIC LIGHTS ═══
+        document.getElementById('tlClose').onclick = () => { if (window.vox) window.vox.quit(); };
+        document.getElementById('tlMin').onclick = () => { if (window.vox) window.vox.minimize(); };
+        document.getElementById('tlMax').onclick = expandDashboard;
+        document.getElementById('tlCloseExp').onclick = () => { if (window.vox) window.vox.quit(); };
+        document.getElementById('tlMinExp').onclick = collapseDashboard;
+
+        // ═══ HOTKEY ═══
+        if (window.vox && window.vox.onHotkeyToggle) {
+            window.vox.onHotkeyToggle(() => toggleRecording());
+        }
+        capsule.addEventListener('click', (e) => {
+            if (!e.defaultPrevented && (e.target === capsule || e.target.classList.contains('logo')))
+                toggleRecording();
+        });
+
+        animate();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  axiom-vox:
+    build: .
+    image: axiom-vox:1.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      - VOX_ENV=production
+      - VOX_LOG_LEVEL=INFO
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1Gi
+          cpus: "1000m"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

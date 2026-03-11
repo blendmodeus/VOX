@@ -1,0 +1,31 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: axiom-vox
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/axiom-vox:1.0.0
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+        env:
+        - name: VOX_ENV
+          value: "production"
+        - name: VOX_LOG_LEVEL
+          value: "INFO"
+        livenessProbe:
+          httpGet:
+            path: /health
+        readinessProbe:
+          httpGet:
+            path: /ready

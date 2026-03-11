@@ -1,0 +1,56 @@
+# VØX LoRA Adapter Configuration
+# Reference: https://arxiv.org/abs/2106.09685
+
+# Default configuration - balanced quality and size
+default:
+  rank: 8                    # LoRA rank (4-16 typical)
+  alpha: 16.0                # Scaling factor (typically 2x rank)
+  dropout: 0.05              # Dropout for regularization
+  bias: "none"               # Bias handling: "none", "all", "lora_only"
+  target_modules:
+    - "q_proj"               # Query projection
+    - "v_proj"               # Value projection
+    - "k_proj"               # Key projection
+    - "o_proj"               # Output projection
+    - "gate_proj"            # MLP gate
+    - "up_proj"              # MLP up projection
+
+# High quality configuration - more capacity, better voice matching
+high_quality:
+  rank: 16
+  alpha: 32.0
+  dropout: 0.1
+  bias: "none"
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"            # Additional MLP coverage
+
+# Fast configuration - quick iteration, smaller files
+fast:
+  rank: 4
+  alpha: 8.0
+  dropout: 0.0
+  bias: "none"
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+
+# Minimal configuration - smallest possible adapter
+minimal:
+  rank: 2
+  alpha: 4.0
+  dropout: 0.0
+  bias: "none"
+  target_modules:
+    - "q_proj"
+
+# Estimated parameters per configuration (for 1.7B model):
+# - default:      ~2.5M params (~10MB)
+# - high_quality: ~5.0M params (~20MB)
+# - fast:         ~0.8M params (~3MB)
+# - minimal:      ~0.2M params (~1MB)
