@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Whisper models (downloaded at runtime)
+*.bin
+*.pt
+
+# Node
+node_modules/
+package-lock.json
+
+# Electron build output
+out/
+release/
+
+# Runtime data
+*.wav
+*.mp3
+*.webm
+
+# Logs
+*.log
+
+# Local config (user-specific)
+# ~/.vox/ is the user config dir, not in repo
+
+# Numba cache
+numba_cache/

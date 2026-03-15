@@ -609,7 +609,7 @@
             <div class="kitt-side">
                 <button class="kitt-btn yellow" id="btnModel">MODEL<span class="btn-detail">base</span></button>
                 <button class="kitt-btn yellow" id="btnLang">LANG<span class="btn-detail">auto</span></button>
-                <button class="kitt-btn yellow" id="btnOutput">OUT<span class="btn-detail">inject</span></button>
+                <button class="kitt-btn yellow" id="btnOutput">OUT<span class="btn-detail">✦clean</span></button>
                 <button class="kitt-btn red" id="btnMic">MIC<span class="btn-detail">default</span></button>
                 <button class="kitt-btn red" id="btnHotkey">KEY<span class="btn-detail">⌘⇧Spc</span></button>
             </div>
@@ -677,12 +677,72 @@
             model: 'base',
             language: 'auto',
             output: 'inject',
+            format: 'clean',
             tts: false,
             aiModel: 'none',
             speed: '1.0',
             voice: 'prime',
             mode: 'transcribe'
         };
+
+        // ── Health polling: wait for API before enabling ──
+        let apiReady = false;
+        async function waitForAPI() {
+            setStatus('processing', 'Connecting...');
+            while (!apiReady) {
+                try {
+                    const r = await fetch(`${API_URL}/health`);
+                    if (r.ok) {
+                        apiReady = true;
+                        // Load saved settings
+                        await loadSavedConfig();
+                        setStatus('', 'Ready');
+                        return;
+                    }
+                } catch (e) { /* API not up yet */ }
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
+
+        async function loadSavedConfig() {
+            try {
+                const r = await fetch(`${API_URL}/config`);
+                const cfg = await r.json();
+                if (cfg.model) settings.model = cfg.model;
+                if (cfg.language) settings.language = cfg.language;
+                if (cfg.format) settings.format = cfg.format;
+                if (cfg.ai_model) settings.aiModel = cfg.ai_model;
+                if (cfg.speed) settings.speed = cfg.speed;
+                if (cfg.voice) settings.voice = cfg.voice;
+                if (cfg.tts !== undefined) settings.tts = cfg.tts;
+                // Update button labels
+                document.querySelector('#btnModel .btn-detail').textContent = settings.model;
+                document.querySelector('#btnLang .btn-detail').textContent = settings.language;
+                const fmtIcons = { raw: '⚡raw', clean: '✦clean', professional: '◆pro' };
+                document.querySelector('#btnOutput .btn-detail').textContent = fmtIcons[settings.format] || settings.format;
+                const ttsBtn = document.getElementById('btnTTS');
+                ttsBtn.classList.toggle('active', settings.tts);
+                ttsBtn.querySelector('.btn-detail').textContent = settings.tts ? 'on' : 'off';
+            } catch (e) { console.log('[VØX] No saved config, using defaults'); }
+        }
+
+        function saveConfig() {
+            fetch(`${API_URL}/config`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    model: settings.model,
+                    language: settings.language,
+                    format: settings.format,
+                    ai_model: settings.aiModel,
+                    speed: settings.speed,
+                    voice: settings.voice,
+                    tts: settings.tts,
+                })
+            }).catch(e => console.log('[VØX] Config save failed:', e));
+        }
+
+        waitForAPI();
 
         // ═══ BUILD MODULATORS ═══
         function buildModulator(container, linesPerCol, cls) {
@@ -881,7 +941,12 @@
 
         // ═══ TRANSCRIPTION ═══
         async function sendToTranscription(blob) {
-            const fd = new FormData(); fd.append('audio', blob, 'recording.wav');
+            const fd = new FormData();
+            fd.append('audio', blob, 'recording.wav');
+            // Pass settings to backend
+            if (settings.language !== 'auto') fd.append('language', settings.language);
+            fd.append('model', settings.model);
+            fd.append('format', settings.format);
             try {
                 const r = await fetch(`${API_URL}/transcribe`, { method: 'POST', body: fd });
                 const res = await r.json();
@@ -899,7 +964,6 @@
                             const aiData = await aiRes.json();
                             if (aiData.status === 'success' && aiData.text) {
                                 showTranscriptFlash('⊘ ' + aiData.text);
-                                // Speak the AI response through Chatterbox
                                 await playTTS(aiData.text);
                             } else {
                                 setStatus('', 'AI Error');
@@ -978,9 +1042,21 @@
             { value: 'small', label: 'SMALL', sub: '~460MB — accurate' },
             { value: 'medium', label: 'MEDIUM', sub: '~1.5GB — high accuracy' },
             { value: 'large-v3', label: 'LARGE-V3', sub: '~3GB — best quality' },
-        ], settings.model, (v) => {
+        ], settings.model, async (v) => {
             settings.model = v;
-            document.querySelector('#btnModel .btn-detail').textContent = v;
+            const btn = document.querySelector('#btnModel .btn-detail');
+            btn.textContent = '...';
+            try {
+                const fd = new FormData();
+                fd.append('model', v);
+                await fetch(`${API_URL}/stt/load-model`, { method: 'POST', body: fd });
+                btn.textContent = v;
+            } catch (e) {
+                console.error('[VØX] Model switch failed:', e);
+                btn.textContent = v + '!';
+                setTimeout(() => { btn.textContent = v; }, 2000);
+            }
+            saveConfig();
         }, true);
 
         document.getElementById('btnLang').onclick = () => showPopup('Language', [
@@ -995,15 +1071,19 @@
         ], settings.language, (v) => {
             settings.language = v;
             document.querySelector('#btnLang .btn-detail').textContent = v;
+            saveConfig();
         }, false);
 
-        document.getElementById('btnOutput').onclick = () => showPopup('Output Mode', [
-            { value: 'inject', label: 'INJECT AT CURSOR', sub: 'Paste via ⌘V' },
-            { value: 'clipboard', label: 'CLIPBOARD ONLY', sub: 'Copy without pasting' },
-        ], settings.output, (v) => {
-            settings.output = v;
-            document.querySelector('#btnOutput .btn-detail').textContent = v;
-        }, false);
+        document.getElementById('btnOutput').onclick = () => showPopup('Format + Output', [
+            { value: 'raw', label: '⚡ RAW', sub: 'No formatting — raw Whisper output' },
+            { value: 'clean', label: '✦ CLEAN', sub: 'Filler removal + punctuation (local)' },
+            { value: 'professional', label: '◆ PROFESSIONAL', sub: 'AI-polished text (LLM pass)' },
+        ], settings.format, (v) => {
+            settings.format = v;
+            const icons = { raw: '⚡raw', clean: '✦clean', professional: '◆pro' };
+            document.querySelector('#btnOutput .btn-detail').textContent = icons[v] || v;
+            saveConfig();
+        }, true);
 
         document.getElementById('btnAI').onclick = () => showPopup('A.I. Model', [
             { value: 'none', label: 'NONE', sub: 'Transcription only' },
@@ -1026,6 +1106,7 @@
         ], settings.speed, (v) => {
             settings.speed = v;
             document.querySelector('#btnSpeed .btn-detail').textContent = v + 'x';
+            saveConfig();
         }, false);
 
         document.getElementById('btnVoice').onclick = () => showPopup('Voice Profile', [

@@ -2,9 +2,10 @@
 AXIØM VØX Integration
 ---------------------
 
-Governed text-to-speech with AXIØM intelligence.
+Governed voice intelligence with AXIØM governance.
 
-v1.3.0: PRIME Voice - Sovereign voice identity for PRIME agent (NEW)
+v1.4.0: STT Engine - Governed speech-to-text with PII redaction, content filtering, streaming (NEW)
+v1.3.0: PRIME Voice - Sovereign voice identity for PRIME agent
 v1.2.0: Voice Genome - Complete voice DNA mapping and analysis
 v1.1.0: Resonance Analysis - Song psychological impact prediction
 v1.0.0: Stable Release - All 12 AXIOM Phases Complete (STABLE)

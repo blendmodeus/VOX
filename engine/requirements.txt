@@ -1,0 +1,17 @@
+# VØX Engine Dependencies
+
+# Core STT
+faster-whisper>=1.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+httpx>=0.24.0
+python-multipart>=0.0.6
+
+# Optional — Wake Word (requires system portaudio)
+# pip install pyaudio
+# On macOS: brew install portaudio && pip install pyaudio
+
+# Optional — Audio processing
+# numpy>=1.24.0        # included by faster-whisper
+# soundfile>=0.12.0    # for TTS audio processing
+# scipy>=1.10.0        # for spectral analysis

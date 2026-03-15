@@ -12,9 +12,14 @@ const API_PORT = 8000;
 const API_URL = `http://127.0.0.1:${API_PORT}`;
 
 // ─── Python API Backend ───────────────────────────────────────────
-const PYTHON_PATH = '/Users/jeremybrasher/Development/axiom-kernel/axiom_vox/.venv/bin/python3';
-const API_SCRIPT = '/Users/jeremybrasher/Development/axiom-kernel/axiom_vox/vox_api.py';
-const PROJECT_ROOT = '/Users/jeremybrasher/Development/axiom-kernel';
+const ENGINE_DIR = path.resolve(__dirname, '..', 'engine');
+const API_SCRIPT = path.join(ENGINE_DIR, 'vox_api.py');
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+
+// Try venv first, fall back to system python3
+const fs = require('fs');
+const VENV_PYTHON = path.join(ENGINE_DIR, '.venv', 'bin', 'python3');
+const PYTHON_PATH = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3';
 
 function startApiServer() {
     if (apiProcess) return;
@@ -29,7 +34,8 @@ function startApiServer() {
         // No process on port — that's fine
     }
 
-    console.log('[VØX] Starting Python API server...');
+    console.log(`[VØX] Starting Python API server (${PYTHON_PATH})...`);
+    console.log(`[VØX] Script: ${API_SCRIPT}`);
     apiProcess = spawn(PYTHON_PATH, [API_SCRIPT], {
         env: {
             ...process.env,
